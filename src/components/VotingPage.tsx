@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Title, Paper, Button, Grid, Text, Image } from '@mantine/core';
+import { Container, Title, Paper, Button, Grid, Text, Image, MediaQuery, useMantineTheme } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { getCandidates, vote, checkVoteStatus } from '../services/api';
 
@@ -15,6 +15,7 @@ const VotingPage: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [hasVoted, setHasVoted] = useState(false);
   const navigate = useNavigate();
+  const theme = useMantineTheme();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,7 +57,7 @@ const VotingPage: React.FC = () => {
 
   if (hasVoted) {
     return (
-      <Container size="md" mt="xl">
+      <Container size="md" mt="xl" px="xs">
         <Paper shadow="xs" p="md">
           <Title order={2} ta="center">You have already voted</Title>
           <Text ta="center" mt="md">Thank you for participating in the election.</Text>
@@ -67,15 +68,25 @@ const VotingPage: React.FC = () => {
   }
 
   return (
-    <Container size="lg" mt="xl">
+    <Container size="lg" mt="xl" px="xs">
       <Title order={2} mb="xl">Cast Your Vote</Title>
       <Grid>
         {candidates.map((candidate) => (
-          <Grid.Col key={candidate.id} span={4}>
-            <Paper shadow="xs" p="md">
-              <Image src={candidate.image_url} alt={candidate.name} height={200} fit="cover" />
+          <Grid.Col key={candidate.id} xs={12} sm={6} md={4}>
+            <Paper shadow="xs" p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {candidate.image_url && (
+                <Image
+                  src={candidate.image_url}
+                  alt={candidate.name}
+                  height={200}
+                  fit="cover"
+                  onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
               <Title order={3} mt="md">{candidate.name}</Title>
-              <Text mt="xs">{candidate.description}</Text>
+              <Text mt="xs" style={{ flexGrow: 1 }}>{candidate.description}</Text>
               <Button fullWidth mt="md" onClick={() => handleVote(candidate.id)}>
                 Vote for {candidate.name}
               </Button>

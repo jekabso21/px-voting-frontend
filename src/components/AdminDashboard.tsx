@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Title, Paper, Button, Grid, Text, TextInput, Textarea, Modal } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
+import { Container, Title, Text, Button, Paper, Grid, Modal, TextInput, Textarea, Group, Card, Image, MediaQuery, useMantineTheme } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getCandidates, getCandidateStats, addCandidate, editCandidate, deleteCandidate, removeAllVotes } from '../services/api';
 
 interface Candidate {
@@ -16,6 +18,8 @@ interface CandidateStats {
   votes: number;
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
 const AdminDashboard: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [stats, setStats] = useState<{ total_votes: number; candidates: CandidateStats[] }>({ total_votes: 0, candidates: [] });
@@ -23,10 +27,19 @@ const AdminDashboard: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const [newCandidate, setNewCandidate] = useState({ name: '', description: '', image_url: '' });
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const theme = useMantineTheme();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+
     fetchData();
-  }, []);
+  }, [navigate]);
 
   const fetchData = async () => {
     try {
@@ -34,11 +47,12 @@ const AdminDashboard: React.FC = () => {
       setCandidates(candidatesData);
       setStats(statsData);
     } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to fetch data.',
-        color: 'red',
-      });
+      console.error('Error fetching data:', error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     }
   };
 
@@ -119,36 +133,95 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  if (error) {
+    return (
+      <Container>
+        <Title order={2}>Error</Title>
+        <Text color="red">{error}</Text>
+        <Button onClick={() => navigate('/')}>Back to Login</Button>
+      </Container>
+    );
+  }
+
   return (
-    <Container size="lg" mt="xl">
+    <Container size="xl" mt="xl" px="xs">
       <Title order={2} mb="xl">Admin Dashboard</Title>
       
-      <Paper shadow="xs" p="md" mb="xl">
-        <Title order={3} mb="md">Voting Statistics</Title>
-        <Text>Total Votes: {stats.total_votes}</Text>
-        {stats.candidates.map((candidate) => (
-          <Text key={candidate.id}>
-            {candidate.name}: {candidate.votes} votes
-          </Text>
-        ))}
-      </Paper>
+      <Grid>
+        <Grid.Col xs={12} md={6}>
+          <Paper shadow="xs" p="md" mb="xl">
+            <Title order={3} mb="md">Voting Statistics</Title>
+            <Text size="lg" weight={700} mb="md">Total Votes: {stats.total_votes}</Text>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.candidates}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="votes" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid.Col>
+        <Grid.Col xs={12} md={6}>
+          <Paper shadow="xs" p="md" mb="xl">
+            <Title order={3} mb="md">Vote Distribution</Title>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={stats.candidates}
+                  dataKey="votes"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  label
+                >
+                  {stats.candidates.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid.Col>
+      </Grid>
 
-      <Button onClick={() => setIsAddModalOpen(true)} mb="xl">Add New Candidate</Button>
-      <Button onClick={handleRemoveAllVotes} color="red" ml="md" mb="xl">Remove All Votes</Button>
+      <Group position="apart" mb="xl">
+        <Button onClick={() => setIsAddModalOpen(true)}>Add New Candidate</Button>
+        <Button onClick={handleRemoveAllVotes} color="red">Remove All Votes</Button>
+      </Group>
 
       <Grid>
         {candidates.map((candidate) => (
-          <Grid.Col key={candidate.id} span={4}>
-            <Paper shadow="xs" p="md">
-              <Title order={3}>{candidate.name}</Title>
-              <Text mt="xs">{candidate.description}</Text>
+          <Grid.Col key={candidate.id} xs={12} sm={6} md={4}>
+            <Card shadow="sm" p="lg" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Card.Section>
+                {candidate.image_url && (
+                  <Image
+                    src={candidate.image_url}
+                    alt={candidate.name}
+                    height={160}
+                    fit="cover"
+                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
+              </Card.Section>
+              <Title order={3} mt="md">{candidate.name}</Title>
+              <Text mt="xs" color="dimmed" style={{ flexGrow: 1 }}>{candidate.description}</Text>
               <Button onClick={() => { setEditingCandidate(candidate); setIsEditModalOpen(true); }} mt="md" fullWidth>
                 Edit
               </Button>
               <Button onClick={() => handleDeleteCandidate(candidate.id)} mt="xs" color="red" fullWidth>
                 Delete
               </Button>
-            </Paper>
+            </Card>
           </Grid.Col>
         ))}
       </Grid>
