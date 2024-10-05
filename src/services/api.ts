@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 
-const API_URL = 'http://localhost:3003/api';
+const API_URL = 'http://65.108.46.30:3003/api';
 
 // Create a function to generate an API instance
 const createApiInstance = (token?: string): AxiosInstance => {
