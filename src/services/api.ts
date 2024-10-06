@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://65.108.46.30:3003/api';
+const API_URL = 'https://backend.victoria-pasparvalde.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
