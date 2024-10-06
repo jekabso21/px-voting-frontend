@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'https://backend.victoria-pasparvalde.com/api';
+// const API_URL = 'https://backend.victoria-pasparvalde.com/api';
+const API_URL = 'http://localhost:3003/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -47,7 +48,7 @@ export const getCandidates = async () => {
     const response = await api.get('/candidates', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Candidates data:', response.data); // Added log for candidates data
+    console.log('Candidates data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching candidates:', error);
@@ -61,7 +62,7 @@ export const getCandidateStats = async () => {
     const response = await api.get('/candidates/stats', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Candidate stats data:', response.data); // Added log for candidate stats data
+    console.log('Candidate stats data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching candidate stats:', error);
@@ -69,13 +70,13 @@ export const getCandidateStats = async () => {
   }
 };
 
-export const vote = async (candidate_id: number) => {
+export const vote = async (candidateIds: number[]) => {
   const token = localStorage.getItem('token');
   try {
-    const response = await api.post('/vote', { candidate_id }, {
+    const response = await api.post('/vote', { candidate_ids: candidateIds }, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Vote response data:', response.data); // Added log for vote response data
+    console.log('Vote response data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error voting:', error);
@@ -89,7 +90,7 @@ export const addCandidate = async (candidateData: { name: string; description: s
     const response = await api.post('/candidates', candidateData, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Added candidate response data:', response.data); // Added log for added candidate response data
+    console.log('Added candidate response data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error adding candidate:', error);
@@ -103,7 +104,7 @@ export const editCandidate = async (id: number, candidateData: { name: string; d
     const response = await api.put(`/candidates/${id}`, candidateData, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Edited candidate response data:', response.data); // Added log for edited candidate response data
+    console.log('Edited candidate response data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error editing candidate:', error);
@@ -117,7 +118,7 @@ export const deleteCandidate = async (id: number) => {
     const response = await api.delete(`/candidates/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Deleted candidate response data:', response.data); // Added log for deleted candidate response data
+    console.log('Deleted candidate response data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error deleting candidate:', error);
@@ -131,7 +132,7 @@ export const removeAllVotes = async () => {
     const response = await api.delete('/vote', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Removed all votes response data:', response.data); // Added log for removed all votes response data
+    console.log('Removed all votes response data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error removing all votes:', error);
@@ -145,7 +146,7 @@ export const checkVoteStatus = async () => {
     const response = await api.get('/vote/status', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Vote status data:', response.data); // Added log for vote status data
+    console.log('Vote status data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error checking vote status:', error);
