@@ -1,39 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextInput, Button, Paper, Title, Container, Box } from '@mantine/core';
+import { TextInput, Button, Paper, Title, Container } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { login } from '../services/api';
 
 const Login: React.FC = () => {
   const [personalCode, setPersonalCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     try {
       const response = await login(personalCode);
-      console.log('Login response in component:', response);
-      
-      if (response && response.token && response.user && response.user.role) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('userRole', response.user.role);
-        if (response.user.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/voting');
-        }
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('userRole', response.user.role);
+      if (response.user.role === 'admin') {
+        navigate('/admin');
       } else {
-        setError('Invalid response format from server');
+        navigate('/voting');
       }
     } catch (error) {
-      console.error('Login error in component:', error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('An unexpected error occurred');
-      }
+      notifications.show({
+        title: 'Login Failed',
+        message: 'Invalid personal code or you have already voted.',
+        color: 'red',
+      });
     }
   };
 
@@ -54,11 +45,6 @@ const Login: React.FC = () => {
           <Button type="submit" fullWidth mt="xl">
             Login
           </Button>
-          {error && (
-            <Box mt="sm" style={{ color: 'red', fontSize: '14px' }}>
-              {error}
-            </Box>
-          )}
         </form>
       </Paper>
     </Container>

@@ -1,22 +1,13 @@
 version: '3.8'
 
 services:
-  backend:
-    image: px_voting_app_app  # Replace with your actual backend image name
-    ports:
-      -  "5173:5173"
-    environment:
-      - NODE_ENV=production  # Set environment variables for production
-    volumes:
-      - ./backend:/usr/src/app  # Adjust the path to your backend code
-
   frontend:
     build:
-      context: ./frontend  # Path to your frontend directory
+      context: .  # Use the current directory as the build context
       dockerfile: Dockerfile  # Specify the Dockerfile if it's named differently
     ports:
       - "5173:5173"  # Map the container port to host port 5173
     environment:
       - NODE_ENV=production  # Set environment variables for production
     volumes:
-      - ./frontend:/usr/src/app  # Mount the current directory to the container
+      - .:/usr/src/app  # Mount the current directory to the container
