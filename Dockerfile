@@ -4,17 +4,17 @@ FROM node:16
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json first, so Docker can cache the npm install step
 COPY package*.json ./
 
-# Install all dependencies
+# Install all dependencies, including devDependencies (which includes Vite)
 RUN npm install
+
+# Copy the rest of the application code, including index.html and source files
+COPY . .
 
 # Run the build process to generate the dist folder
 RUN npm run build
-
-# Copy the rest of the application code (after build)
-COPY . .
 
 # Expose the port the app runs on
 EXPOSE 5173
