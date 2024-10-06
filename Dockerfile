@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --only=production  # Install only production dependencies
 
 # Copy the rest of the application code
 COPY . .
@@ -19,5 +19,5 @@ RUN npm run build
 # Expose the port your app runs on
 EXPOSE 5173
 
-# Command to run the application
-CMD ["node", "dist/index.js"]  # Adjust this if your entry point is different
+# Command to run the application (using JSON array syntax)
+CMD ["node", "dist/index.js"]
