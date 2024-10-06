@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Expose the port the app runs on
-EXPOSE 5173
+EXPOSE 4173
 
 # Serve the built files using Vite's preview mode
 CMD ["npm", "run", "start"]
