@@ -1,5 +1,5 @@
-# Use the official Node.js image as the base image
-FROM node:14
+# Use Node.js 16 as the base image
+FROM node:16
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install all dependencies, including devDependencies (which includes Vite)
+# Install all dependencies
 RUN npm install
 
 # Run the build process to generate the dist folder
@@ -19,5 +19,5 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 5173
 
-# Use Vite's preview mode to serve the built files
+# Serve the built files using Vite's preview mode
 CMD ["npm", "run", "start"]
