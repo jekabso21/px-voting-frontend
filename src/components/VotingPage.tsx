@@ -1,29 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Title, Paper, Button, Grid, Text, Image, MediaQuery, useMantineTheme } from '@mantine/core';
+import { Container, Title, Paper, Button, Grid, Text, Image } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { getCandidates, vote, checkVoteStatus } from '../services/api';
-
-interface Candidate {
-  id: number;
-  name: string;
-  description: string;
-  image_url: string;
-}
+import { Candidate, VoteStatus } from '../types';
 
 const VotingPage: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [hasVoted, setHasVoted] = useState(false);
+  const [hasVoted, setHasVoted] = useState<boolean>(false);
   const navigate = useNavigate();
-  const theme = useMantineTheme();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const voteStatus = await checkVoteStatus();
+        const voteStatus: VoteStatus = await checkVoteStatus();
         setHasVoted(voteStatus.has_voted);
         if (!voteStatus.has_voted) {
-          const candidatesData = await getCandidates();
+          const candidatesData: Candidate[] = await getCandidates();
           setCandidates(candidatesData);
         }
       } catch (error) {

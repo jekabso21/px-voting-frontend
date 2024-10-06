@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Title, Text, Button, Paper, Grid, Modal, TextInput, Textarea, Group, Card, Image, MediaQuery, useMantineTheme } from '@mantine/core';
+import { Container, Title, Text, Button, Paper, Grid, Modal, TextInput, Textarea, Group, Card, Image, Loader } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getCandidates, getCandidateStats, addCandidate, editCandidate, deleteCandidate, removeAllVotes } from '../services/api';
@@ -28,8 +28,8 @@ const AdminDashboard: React.FC = () => {
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const [newCandidate, setNewCandidate] = useState({ name: '', description: '', image_url: '' });
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const theme = useMantineTheme();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -42,10 +42,18 @@ const AdminDashboard: React.FC = () => {
   }, [navigate]);
 
   const fetchData = async () => {
+    setIsLoading(true);
     try {
       const [candidatesData, statsData] = await Promise.all([getCandidates(), getCandidateStats()]);
-      setCandidates(candidatesData);
-      setStats(statsData);
+      const formattedCandidates = Array.isArray(candidatesData) ? candidatesData : [];
+      setCandidates(formattedCandidates);
+      setStats({
+        total_votes: statsData.total_votes || 0,
+        candidates: Array.isArray(statsData.candidates) ? statsData.candidates : []
+      });
+
+      // Print out the entire table of candidates
+      console.table(formattedCandidates);
     } catch (error) {
       console.error('Error fetching data:', error);
       if (error instanceof Error) {
@@ -53,6 +61,8 @@ const AdminDashboard: React.FC = () => {
       } else {
         setError('An unexpected error occurred');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -143,6 +153,14 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <Container style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Loader size="xl" />
+      </Container>
+    );
+  }
+
   return (
     <Container size="xl" mt="xl" px="xs">
       <Title order={2} mb="xl">Admin Dashboard</Title>
@@ -152,41 +170,49 @@ const AdminDashboard: React.FC = () => {
           <Paper shadow="xs" p="md" mb="xl">
             <Title order={3} mb="md">Voting Statistics</Title>
             <Text size="lg" weight={700} mb="md">Total Votes: {stats.total_votes}</Text>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stats.candidates}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="votes" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+            {stats.candidates.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={stats.candidates}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="votes" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Text>No voting data available.</Text>
+            )}
           </Paper>
         </Grid.Col>
         <Grid.Col xs={12} md={6}>
           <Paper shadow="xs" p="md" mb="xl">
             <Title order={3} mb="md">Vote Distribution</Title>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={stats.candidates}
-                  dataKey="votes"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  label
-                >
-                  {stats.candidates.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {stats.candidates.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={stats.candidates}
+                    dataKey="votes"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label
+                  >
+                    {stats.candidates.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Text>No voting data available.</Text>
+            )}
           </Paper>
         </Grid.Col>
       </Grid>
@@ -197,33 +223,39 @@ const AdminDashboard: React.FC = () => {
       </Group>
 
       <Grid>
-        {candidates.map((candidate) => (
-          <Grid.Col key={candidate.id} xs={12} sm={6} md={4}>
-            <Card shadow="sm" p="lg" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Card.Section>
-                {candidate.image_url && (
-                  <Image
-                    src={candidate.image_url}
-                    alt={candidate.name}
-                    height={160}
-                    fit="cover"
-                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                )}
-              </Card.Section>
-              <Title order={3} mt="md">{candidate.name}</Title>
-              <Text mt="xs" color="dimmed" style={{ flexGrow: 1 }}>{candidate.description}</Text>
-              <Button onClick={() => { setEditingCandidate(candidate); setIsEditModalOpen(true); }} mt="md" fullWidth>
-                Edit
-              </Button>
-              <Button onClick={() => handleDeleteCandidate(candidate.id)} mt="xs" color="red" fullWidth>
-                Delete
-              </Button>
-            </Card>
+        {candidates.length > 0 ? (
+          candidates.map((candidate) => (
+            <Grid.Col key={candidate.id} xs={12} sm={6} md={4}>
+              <Card shadow="sm" p="lg" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card.Section>
+                  {candidate.image_url && (
+                    <Image
+                      src={candidate.image_url}
+                      alt={candidate.name}
+                      height={160}
+                      fit="cover"
+                      onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  )}
+                </Card.Section>
+                <Title order={3} mt="md">{candidate.name}</Title>
+                <Text mt="xs" color="dimmed" style={{ flexGrow: 1 }}>{candidate.description}</Text>
+                <Button onClick={() => { setEditingCandidate(candidate); setIsEditModalOpen(true); }} mt="md" fullWidth>
+                  Edit
+                </Button>
+                <Button onClick={() => handleDeleteCandidate(candidate.id)} mt="xs" color="red" fullWidth>
+                  Delete
+                </Button>
+              </Card>
+            </Grid.Col>
+          ))
+        ) : (
+          <Grid.Col>
+            <Text>No candidates available.</Text>
           </Grid.Col>
-        ))}
+        )}
       </Grid>
 
       <Modal opened={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add New Candidate">

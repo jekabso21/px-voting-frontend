@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5173:5173"  # Map the container port to the host
+    environment:
+      - NODE_ENV=production  # Set environment variables if needed
+    volumes:
+      - .:/usr/src/app  # Mount the current directory to the container
